@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Asap+Condensed&display=swap');
+
+.header {
+    background-color: white;
+    border-bottom: 1px solid black;
+    height: 40px;
+    position: relative;
+    width: 100%;
+}
+
+.headerTitleLink {
+    color: black;
+    display: inline-block;
+    float: left;
+    font-family: 'Asap Condensed', sans-serif;
+    font-size: 30px;
+    margin-left: 6px;
+    text-decoration: none;
+}
+
+.headerNav {
+    text-align: center;
+    width: 50%;
+    height: 100%;
+}
+
+.headerNav li {
+    display: inline;
+    padding: 0 40px 0 40px;
+}
+
+.headerLink {
+    color: black;
+    display: inline-flex;
+    font-family: 'Asap Condensed', sans-serif;
+    font-size: 16px;
+    height: 100%;
+    text-decoration: none;
+    justify-content: center; /* align horizontal */
+    align-items: center; /* align vertical */
+}
+
+.headerLink:hover {
+    color: orangered;
+}

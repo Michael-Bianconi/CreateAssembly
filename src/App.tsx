@@ -1,25 +1,26 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
+import Header from './client/components/Header'
+import {Route, Switch} from "react-router";
+import Emulators from "./client/pages/Emulators";
+import Home from "./client/pages/Home";
+import NotFound from "./client/pages/NotFound";
+import Chip8 from "./client/pages/emulator/Chip8";
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <main className="App">
+      <Header />
+      <Switch>
+          <Route path={Home.URL} component={Home} exact />
+          <Route path={Emulators.URL} component={Emulators} exact />
+          <Route path='/about' component={Home} />
+
+          <Route path={Chip8.URL} component={Chip8} />
+
+          <Route component={NotFound} />
+      </Switch>
+    </main>
   );
 }
 

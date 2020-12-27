@@ -1,0 +1,12 @@
+.pixelDisplayContainer {
+    border: 1px solid orangered;
+    display: inline-block;
+    float: left;
+    height: 320px;
+    margin: 4px;
+    width: 640px;
+}
+
+.debuggerContainer {
+    display: inline-block;
+}

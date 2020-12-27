@@ -1,0 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Asap+Condensed&display=swap');
+
+.emulatorList {
+    width: 80%;
+    list-style-type: none;
+    text-align: left;
+}
+
+.emulatorList li {
+    border: 1px solid black;
+    border-radius: 2px;
+    height: 40px;
+    margin: 4px 0 4px 0;
+    padding: 4px 0 4px 0;
+}
+
+.emulatorListing, .emulatorListing404 {
+    color: black;
+    font-family: 'Asap Condensed', sans-serif;
+    text-decoration: none;
+}
+
+.emulatorListing404 {
+    background-color: yellow;
+}
+
