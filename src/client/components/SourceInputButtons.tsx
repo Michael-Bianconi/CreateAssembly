@@ -1,9 +1,12 @@
 import React, {RefObject} from "react";
 import SourceReader from "../emulators/SourceReader";
+import styles from "../css/modules/SourceInputButtons.module.css";
 
 type SourceInputButtonsProps = {
-    onAssemblyLoad: null | ((lines: string[]) => void);
-    onBinaryLoad: null | ((binary: Uint8Array) => void);
+    availableSamples: string[];
+    onAssemblyLoad: ((lines: string[]) => void);
+    onBinaryLoad: ((binary: Uint8Array) => void);
+    onSampleChoice: ((sampleName: string) => void);
 }
 
 class SourceInputButtons extends React.Component<SourceInputButtonsProps> {
@@ -34,14 +37,14 @@ class SourceInputButtons extends React.Component<SourceInputButtonsProps> {
             }
         };
         return (
-            <div>
+            <div className={styles.container}>
                 <input type='file' ref={this.binaryRef} hidden />
                 <input type='file' ref={this.assemblyRef} hidden />
-                <button onClick={() => click(this.binaryRef)}>
+                <button className={styles.btn} onClick={() => click(this.binaryRef)}>
                     Upload Binary
                 </button>
-                <button onClick={() => click(this.assemblyRef)}>
-                    Upload assembly
+                <button className={styles.btn} onClick={() => click(this.assemblyRef)}>
+                    Upload Assembly
                 </button>
             </div>
         );

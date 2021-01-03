@@ -1,3 +1,5 @@
+import {LineError} from "./Errors";
+
 class Assembler {
 
     private static readonly INSTRUCTIONS: Record<string, [((operand: string) => (string | number | null))[], ((...v: any[]) => number)][]> = {
@@ -62,10 +64,10 @@ class Assembler {
 
     public static assembleLines(lines: string[]): number[] | null {
         let result = [];
-        for (let line of lines) {
-            let opcode = Assembler.assembleLine(line);
+        for (let i = 0; i < lines.length; i++) {
+            let opcode = Assembler.assembleLine(lines[i]);
             if (opcode === null) {
-                return null;
+                throw new LineError(lines[i], i);
             } else {
                 result.push(opcode);
             }

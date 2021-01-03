@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
+
+.terminal {
+    border: 1px solid red;
+    box-sizing: border-box;
+    padding: 6px;
+    width: 500px;
+}
+
+.terminal * {
+    font-family: 'Roboto Mono', monospace;
+}
+
+.terminalHistory {
+    background-color: white;
+    height: 400px;
+    overflow: scroll;
+    width: 100%;
+}
+
+.terminalHistoryLine, .terminalHistoryLineInput, .terminalHistoryLineOutput {
+    display: block;
+    text-align: left;
+    white-space: pre-wrap;
+    width: 100%;
+}
+
+.terminalHistoryLineInput {
+    color: orangered;
+}
+
+.terminalHistoryLineOutput {
+    color: black;
+}
+
+.terminalInput {
+    border-bottom: 0;
+    border-left: 0;
+    border-right: 0;
+    border-top: 1px solid orangered;
+    box-sizing: border-box;
+    color: orangered;
+    display: block;
+    font-weight: bold;
+    width: 100%;
+}

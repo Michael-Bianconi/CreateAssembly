@@ -1,8 +1,15 @@
 import Assembler from "./Assembler";
+import {LabelNameError, LabelRedeclarationError} from "./Errors";
 
 class Preprocessor {
 
-    private readonly labels: Record<string, string> = {};
+    private static readonly KEYWORDS = [
+        'V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6',
+        'V7', 'V8', 'V9', 'VA', 'VB', 'VC', 'VD',
+        'VF', 'ST', 'DT', 'I', '[I]', 'F', 'B', 'K',
+    ];
+
+    public readonly labels: Record<string, string> = {};
     private programCounter: number = 0x200;
 
     run(raw: string[]): string[] {
@@ -19,7 +26,13 @@ class Preprocessor {
         for (let i = 0; i < raw.length; i++) {
             let line = raw[i].trim().toUpperCase();
             line = line.replace(/\s+/, ' ').replace('#', '0X');
-            line = this.processLabel(Preprocessor.removeComment(line));
+            line = Preprocessor.removeComment(line);
+            let extractedLabelsObj = Preprocessor.extractLabels(line);
+            line = extractedLabelsObj.line;
+            for (let label of extractedLabelsObj.labels) {
+                this.addLabel(label);
+            }
+
             if (line !== '') {
                 if (!this.processDefine(line)) {
                     result.push(line);
@@ -44,17 +57,27 @@ class Preprocessor {
         let match = line.match(/^([A-Z_][0-9A-Z_]+)\s*:(.*)/);
         if (match !== null) {
             let [label, rest] = [match[1], match[2].trim()];
-            if (this.labels[label] === undefined) {
+            if (Preprocessor.KEYWORDS.includes(label)) {
+                throw new LabelNameError(label);
+            } else if (this.labels[label] === undefined) {
                 this.labels[label] = '0X' + this.programCounter.toString(16);
                 return rest;
             } else {
-                throw Object.assign(
-                    new Error('Label redeclaration: ' + label),
-                    { code: 402 }
-                );
+                throw new LabelRedeclarationError(label);
             }
         }
         return line;
+    }
+
+    private addLabel(key: string, value?: string): void {
+        value = value === undefined ? '0X' + this.programCounter.toString(16) : value;
+        if (Preprocessor.KEYWORDS.includes(key)) {
+            throw new LabelNameError(key);
+        } else if (this.labels[key] === undefined) {
+            this.labels[key] = value;
+        } else {
+            throw new LabelRedeclarationError(key);
+        }
     }
 
     /**
@@ -66,14 +89,13 @@ class Preprocessor {
         let match = line.match(/^DEFINE\s+([A-Z_][A-Z0-9_]*)\s+([A-Z0-9_]+)$/);
         if (match !== null) {
             let [key, value] = [match[1], match[2]];
-            if (this.labels[key] === undefined) {
+            if (Preprocessor.KEYWORDS.includes(key)) {
+                throw new LabelNameError(key);
+            } else if (this.labels[key] === undefined) {
                 this.labels[key] = value;
                 return true;
             } else {
-                throw Object.assign(
-                    new Error('Label redeclaration: ' + key),
-                    { code: 402 }
-                );
+                throw new LabelRedeclarationError(key);
             }
         } else {
             return false;
@@ -92,6 +114,19 @@ class Preprocessor {
 
     static removeComment(line: string): string {
         return line.split(';')[0].trim();
+    }
+
+    /**
+     * @return Returns a list of labels and the remainder of the line.
+     */
+    static extractLabels(line: string): {labels: string[], line: string} {
+        let l = line.split(':').map(label => label.trim().toUpperCase());
+        for (let label of l.slice(0, l.length-1)) {
+            if (!label.match(/^[A-Z_][0-9A-Z_]*$/) || Preprocessor.KEYWORDS.includes(label)) {
+                throw new LabelNameError(label);
+            }
+        }
+        return {labels: l.slice(0, l.length-1), line: l[l.length-1].trim()};
     }
 }
 

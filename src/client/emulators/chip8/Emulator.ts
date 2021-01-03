@@ -1,3 +1,5 @@
+import PixelDisplay from "../../components/PixelDisplay";
+
 class Emulator {
 
     static readonly MEMORY_SIZE: number = 0x1000;
@@ -5,6 +7,7 @@ class Emulator {
     static readonly V_REGISTER_COUNT: number = 16;
     static readonly DISPLAY_WIDTH: number = 64;
     static readonly DISPLAY_HEIGHT: number = 32;
+    static readonly UPDATE_SPEED: number = 10;
     static readonly MOD_4_BIT = 0x10;
     static readonly MOD_8_BIT = 0x100;
     static readonly MOD_12_BIT = 0x1000;
@@ -72,15 +75,19 @@ class Emulator {
     public dtRegister: number = 0;
     public stRegister: number = 0;
     public stackPointer: number = 0;
-    public memory: number[] = Emulator.init_memory();
+    public memory: Uint8Array = Emulator.init_memory();
     public programCounter: number = 0x200;
     public stack: number[] = Array(Emulator.STACK_SIZE).fill(0);
-    public display: boolean[][] = Emulator.empty_display();
-    public unflushedPixels: [number, number, boolean][] = [];
     public keysPressed: Set<number> = new Set();
     public timeSinceLastInstruction: number = 0;
+    public breakpoints: number[] = [];
+    public enableBreakpoints: boolean = true;
+    public running: boolean = false;
+    public onBreakpoint: (() => void) = () => {};
+    public display: PixelDisplay | undefined;
 
-    constructor() {
+    constructor(display?: PixelDisplay) {
+        this.display = display;
         document.addEventListener('keydown', (event) => {
             if ('0123456789ABCDEF'.indexOf(event.key.toUpperCase()) !== -1) {
                 this.keysPressed.add(parseInt(event.key, 16));
@@ -91,6 +98,33 @@ class Emulator {
                 this.keysPressed.delete(parseInt(event.key, 16));
             }
         });
+    }
+
+    start() {
+        if (this.enableBreakpoints && this.breakpoints.includes(this.programCounter)) {
+            return false;
+        }
+        if (!this.running) {
+            this.running = true;
+            this.run();
+        }
+        return true;
+    }
+
+    pause() {
+        this.running = false;
+    }
+
+    run() {
+        if (this.running) {
+            if (!this.enableBreakpoints || !this.breakpoints.includes(this.programCounter)) {
+                this.next();
+                setTimeout(() => this.run(), Emulator.UPDATE_SPEED);
+            } else {
+                this.running = false;
+                this.onBreakpoint();
+            }
+        }
     }
 
     next(): void {
@@ -109,14 +143,7 @@ class Emulator {
 
     // TODO Unit test
     cls(): void {
-        for (let y = 0; y < this.display.length; y++) {
-            for (let x = 0; x < this.display[y].length; x++) {
-                if (this.display[y][x]) {
-                    this.display[y][x] = false;
-                    this.unflushedPixels.push([x, y, false]);
-                }
-            }
-        }
+        this.display?.clear();
         this.increment_program_counter();
     }
 
@@ -244,21 +271,17 @@ class Emulator {
 
     // TODO Unit test
     drw(vx: number, vy: number, height: number): void {
+        let collision = 0;
         for (let row = 0; row < height; row++) {
             let sprite: number = this.memory[this.iRegister + row];
             for (let col = 0; col < 8; col++) {
                 let x: number = (this.vRegisters[vx] + col) % Emulator.DISPLAY_WIDTH;
                 let y: number = (this.vRegisters[vy] + row) % Emulator.DISPLAY_HEIGHT;
                 let pixel: boolean = (sprite & (0x80 >> col)) > 0;
-                let current: boolean = this.display[y][x];
-                if (current !== pixel) {
-                    this.unflushedPixels.push([x, y, pixel]);
-                } else if (current && pixel) {
-                    this.vRegisters[0xF] = 1;  // collision
-                }
-                this.display[y][x] = current !== pixel;
+                collision |= this.display?.xorPixel(x, y, pixel) ? 1 : 0;
             }
         }
+        this.vRegisters[0xF] = collision;
         this.increment_program_counter();
     }
 
@@ -318,10 +341,9 @@ class Emulator {
         this.increment_program_counter();
     }
 
-    // TODO unit test
     ld_b_v(vx: number): void {
-        this.memory[this.iRegister] = this.vRegisters[vx]; // 100
-        this.memory[this.iRegister + 1] = this.vRegisters[vx] % 100; // 10
+        this.memory[this.iRegister] = Math.floor(this.vRegisters[vx] / 100); // 100
+        this.memory[this.iRegister + 1] = Math.floor(this.vRegisters[vx] % 100 / 10); // 10
         this.memory[this.iRegister + 2] = this.vRegisters[vx] % 10;
         this.increment_program_counter();
     }
@@ -347,7 +369,8 @@ class Emulator {
     }
 
     get_instruction() {
-        let [upper, lower] = this.memory.slice(this.programCounter, this.programCounter + 2);
+        let upper = this.memory[this.programCounter];
+        let lower = this.memory[this.programCounter + 1];
         return (upper << 8) | lower;
     }
 
@@ -373,33 +396,12 @@ class Emulator {
         return true;
     }
 
-    multibyte_memory_write(address: number, value: number): boolean {
-        if (address >= 0 && value >= 0) {
-            while (value !== 0) {
-                this.memory[address++] = value & 0xFF;
-                value >>= 8;
-            }
-            return true;
+    static init_memory(): Uint8Array {
+        let memory = new Uint8Array(Emulator.MEMORY_SIZE).fill(0);
+        for (let i = 0; i < Emulator.FONT_DATA.length; i++) {
+            memory[i] = Emulator.FONT_DATA[i];
         }
-        return false;
-    }
-
-    stack_write(index: number, value: number): void {
-        this.stack[index % Emulator.STACK_SIZE] = value % Emulator.MOD_16_BIT;
-    }
-
-    static init_memory(): number[] {
-        let memory: number[] = Array(Emulator.MEMORY_SIZE).fill(0);
-        memory = Emulator.FONT_DATA.concat(memory.slice(Emulator.FONT_DATA.length));
         return memory;
-    }
-
-    static empty_display(): boolean[][] {
-        let display: boolean[][] = Array(Emulator.DISPLAY_HEIGHT);
-        for (let row = 0; row < display.length; row++) {
-            display[row] = Array(Emulator.DISPLAY_WIDTH).fill(false);
-        }
-        return display;
     }
 
     /**

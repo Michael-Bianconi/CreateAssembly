@@ -1,4 +1,4 @@
-import Assembler from "../../client/emulators/chip8/Assembler";
+import Assembler from "../Assembler";
 
 test('SYS Addr => 0nnn', () => {
     expect(Assembler.assembleLine('SYS 0X000')).toBe(0x0000);

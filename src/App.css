@@ -1,3 +1,17 @@
+html {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  background-color: white;
+  border-left: 1px solid lightgray;
+  border-right: 1px solid lightgray;
+  height: 100%;
+  margin: auto;
+  width: 1200px;
+}
+
 .App {
   text-align: center;
 }

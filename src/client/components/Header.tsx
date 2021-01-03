@@ -1,46 +1,24 @@
 import React from "react";
-import {Link} from "react-router-dom";
 import styles from "../css/modules/Header.module.css";
-import Emulators from "../pages/Emulators";
+import Dropdown from "./Dropdown";
+import {Link} from "react-router-dom";
 
-function TitleLink(props: {to: string, label: string}) {
-    return (
-        <Link to={props.to} className={styles.headerTitleLink}>
-            {props.label}
-        </Link>
-    );
-}
-
-function HeaderLink(props: {to: string, label: string}) {
-    return (
-        <Link to={props.to} className={styles.headerLink}>
-            {props.label}
-        </Link>
-    );
-}
+const EMULATORS = [
+    {href: 'chip8', text: 'Chip-8'},
+    {href: 'pep8', text: 'Pep-8'},
+    {href: 'mp944', text: 'MP944'},
+];
 
 class Header extends React.Component {
     render() {
         return (
-            <header className={styles.header}>
-                <nav className={styles.headerNav}>
-                    <li>
-                        <TitleLink to='/' label='CA' />
-                    </li>
-                    <li>
-                        <HeaderLink to={Emulators.URL} label='Emulators' />
-                    </li>
-                        |
-                    <li>
-                        <HeaderLink to='/source' label='Source' />
-                    </li>
-                        |
-                    <li>
-                        <HeaderLink to='/about' label='About' />
-                    </li>
-                </nav>
-            </header>
-        )
+            <div className={styles.navbar}>
+                <Link to="/" className={styles.navbarTitle}>CreateAssembly.app</Link>
+                <Dropdown text='Emulators' options={EMULATORS} />
+                <Link to='/source' className={styles.navbarLink}>Source</Link>
+                <Link to='/about' className={styles.navbarLink}>About</Link>
+            </div>
+        );
     }
 }
 

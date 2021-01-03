@@ -1,3 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Asap+Condensed&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
+
 .pixelDisplayContainer {
     border: 1px solid orangered;
     display: inline-block;
@@ -9,4 +12,19 @@
 
 .debuggerContainer {
     display: inline-block;
+}
+
+.errorContainer {
+    border: 1px solid orangered;
+    color: orangered;
+    font-family: 'Asap Condensed', sans-serif;
+    height: 50px;
+    margin: auto;
+    padding: 20px;
+    width: 400px;
+}
+
+.errorMessage {
+    color: black;
+    font-family: 'Roboto Mono', monospace;
 }

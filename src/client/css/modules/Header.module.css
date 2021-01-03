@@ -1,45 +1,34 @@
 @import url('https://fonts.googleapis.com/css2?family=Asap+Condensed&display=swap');
 
-.header {
+.navbar {
+    border-bottom: 1px solid orangered;
+    overflow: hidden;
     background-color: white;
-    border-bottom: 1px solid black;
-    height: 40px;
-    position: relative;
-    width: 100%;
+    font-family: 'Asap Condensed', sans-serif;
 }
 
-.headerTitleLink {
-    color: black;
-    display: inline-block;
+.navbarTitle {
+    background-color: orangered;
     float: left;
-    font-family: 'Asap Condensed', sans-serif;
-    font-size: 30px;
-    margin-left: 6px;
-    text-decoration: none;
-}
-
-.headerNav {
-    text-align: center;
-    width: 50%;
-    height: 100%;
-}
-
-.headerNav li {
-    display: inline;
-    padding: 0 40px 0 40px;
-}
-
-.headerLink {
-    color: black;
-    display: inline-flex;
-    font-family: 'Asap Condensed', sans-serif;
     font-size: 16px;
-    height: 100%;
+    font-weight: bold;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
     text-decoration: none;
-    justify-content: center; /* align horizontal */
-    align-items: center; /* align vertical */
 }
 
-.headerLink:hover {
+.navbarLink {
+    float: left;
+    font-size: 16px;
+    font-weight: bold;
     color: orangered;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+.navbarLink:hover, .navbarLink:focus {
+    background-color: orangered;
+    color: white;
 }
