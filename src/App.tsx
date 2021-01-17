@@ -17,7 +17,7 @@ function App() {
             <Switch>
                 <Route path={Home.URL} component={Home} exact/>
                 <Route path='/about' component={Home}/>
-                <Route path={Chip8.URL} component={Chip8}/>
+                <Route path={Chip8.URL} component={Chip8} exact/>
                 <Route component={NotFound}/>
             </Switch>
         </main>

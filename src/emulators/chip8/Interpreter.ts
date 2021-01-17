@@ -1,5 +1,6 @@
 import AbstractInterpreter from "../AbstractInterpreter";
 import Emulator from "./Emulator";
+import Disassembler from "./Disassembler";
 
 class Interpreter extends AbstractInterpreter {
 
@@ -15,20 +16,20 @@ class Interpreter extends AbstractInterpreter {
             switch (command.toUpperCase()) {
                 case 'RUN':
                     if (this.emulator.running) {
-                        return ['Already running'];
+                        return ['Application is already running'];
                     } else {
                         if (!this.emulator.start()) {
                             this.emulator.next();
                         }
                         this.emulator.start();
-                        return ['Running'];
+                        return ['Application is running'];
                     }
                 case 'STOP':
                     this.emulator.pause();
-                    return ['Stopping...'];
+                    return ['Application stopped'];
                 case 'STEP':
                     this.emulator.next();
-                    return ['Stepping'];
+                    return [`Stepping into 0x${this.emulator.programCounter.toString(16)}`];
                 case 'BREAKPOINTS':
                     if (operands.length === 0) {
                         return [this.emulator.breakpoints.join(' ')];
@@ -72,6 +73,17 @@ class Interpreter extends AbstractInterpreter {
                     } else {
                         return ['Error: Expected value: <start> <end>'];
                     }
+                case 'DISASSEMBLE':
+                    if (operands.length === 0) {
+                        return this.disassemble(1);
+                    } else {
+                        let n = parseInt(operands[0]);
+                        if (!isNaN(n)) {
+                            return this.disassemble(n);
+                        } else {
+                            return ['Error: Invalid number <n>'];
+                        }
+                    }
                 case 'HELP':
                     return this.showHelp();
                 default:
@@ -91,10 +103,10 @@ class Interpreter extends AbstractInterpreter {
                 let index = this.emulator!.breakpoints.indexOf(n);
                 if (index !== -1) {
                     this.emulator!.breakpoints.splice(index, 1);
-                    output.push('Removing breakpoint at ' + n);
+                    output.push('Removing breakpoint at 0x' + n.toString(16));
                 } else {
                     this.emulator!.breakpoints.push(n);
-                    output.push('Adding breakpoint at ' + n);
+                    output.push('Adding breakpoint at 0x' + n.toString(16));
                 }
             }
         }
@@ -206,6 +218,18 @@ class Interpreter extends AbstractInterpreter {
         return lines;
     }
 
+    disassemble(numOps: number): string[] {
+        let lines: string[] = [];
+        for (let i = 0; i < numOps * 2; i += 2) {
+            let op = this.emulator?.get_instruction(this.emulator?.programCounter + i);
+            if (op !== null && op !== undefined) {
+                let opStr = Disassembler.disassemble(op);
+                lines.push(opStr !== null ? opStr : 'NULL');
+            }
+        }
+        return lines;
+    }
+
     showHelp(): string[] {
         return [
             'run                    Run the application',
@@ -217,6 +241,7 @@ class Interpreter extends AbstractInterpreter {
             'set <register> <value> Store value in register',
             'mem <start> <end>      Display memory data',
             'stack                  Display stack data',
+            'disassemble [<n>]      Display next n opcodes',
             'help                   Show this message'
         ];
     }

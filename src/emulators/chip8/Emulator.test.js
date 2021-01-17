@@ -1,4 +1,4 @@
-import Emulator from "../Emulator";
+import Emulator from "./Emulator";
 
 test('RET', () => {
     let e = new Emulator();

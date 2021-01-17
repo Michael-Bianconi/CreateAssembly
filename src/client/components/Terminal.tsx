@@ -1,4 +1,4 @@
-import AbstractInterpreter from "../emulators/AbstractInterpreter";
+import AbstractInterpreter from "../../emulators/AbstractInterpreter";
 import React, {createRef, RefObject} from "react";
 import styles from "../css/modules/Terminal.module.css"
 

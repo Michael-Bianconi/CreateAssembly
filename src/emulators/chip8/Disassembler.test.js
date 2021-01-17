@@ -1,4 +1,4 @@
-import Disassembler from "../Disassembler";
+import Disassembler from "./Disassembler";
 
 test('SYS', () => {
     expect(Disassembler.disassemble(0x0000)).toBe('SYS 0x000');

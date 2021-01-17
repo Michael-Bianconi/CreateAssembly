@@ -2,13 +2,19 @@ import React, {RefObject} from "react";
 import PixelDisplay from "../components/PixelDisplay";
 import styles from '../css/modules/chip8/Chip8.module.css';
 import SourceInputButtons from "../components/SourceInputButtons";
-import Emulator from "../emulators/chip8/Emulator";
-import Assembler from "../emulators/chip8/Assembler";
-import Preprocessor from "../emulators/chip8/Preprocessor";
+import Emulator from "../../emulators/chip8/Emulator";
+import Assembler from "../../emulators/chip8/Assembler";
+import Preprocessor from "../../emulators/chip8/Preprocessor";
 import Terminal from "../components/Terminal";
-import Interpreter from "../emulators/chip8/Interpreter";
+import Interpreter from "../../emulators/chip8/Interpreter";
 
-class Chip8 extends React.Component<{}, {loaded: boolean, assemblyError: null | Error}> {
+type Chip8State = {
+    loaded: boolean;
+    assemblyError: null | Error;
+    showManual: boolean;
+};
+
+class Chip8 extends React.Component<{}, Chip8State> {
 
     public static readonly URL = '/chip8';
 
@@ -20,7 +26,7 @@ class Chip8 extends React.Component<{}, {loaded: boolean, assemblyError: null | 
 
     constructor(props: {}) {
         super(props);
-        this.state = {loaded: false, assemblyError: null};
+        this.state = {loaded: false, assemblyError: null, showManual: false};
         this.emulator = new Emulator();
         this.interpreter = new Interpreter(this.emulator);
         this.displayRef = React.createRef<PixelDisplay>();
@@ -33,10 +39,13 @@ class Chip8 extends React.Component<{}, {loaded: boolean, assemblyError: null | 
             this.emulator.display = this.displayRef.current;
         }
 
-        if (this.terminalRef.current !== null) {
-            this.emulator.onBreakpoint = () => {
-                this.terminalRef.current?.addHistoryLines(['Breakpoint'], false);
-            }
+        this.emulator.onBreakpoint = () => {
+            let message = `Breakpoint (0x${this.emulator.programCounter.toString(16)})`;
+            this.terminalRef.current?.addHistoryLines([message], false);
+        };
+        this.emulator.onEndOfRAM = () => {
+            let message = 'Reached end of available RAM, halting execution';
+            this.terminalRef.current?.addHistoryLines([message], false);
         }
     }
 
@@ -52,7 +61,7 @@ class Chip8 extends React.Component<{}, {loaded: boolean, assemblyError: null | 
         if (this.state.loaded) {
             return (
                 <div>
-                    <h1>Chip-8</h1>
+                    <h1 className={styles.title}>Chip-8</h1>
                     <div className={styles.pixelDisplayContainer}>
                         <PixelDisplay
                             ref={this.displayRef}
@@ -71,21 +80,21 @@ class Chip8 extends React.Component<{}, {loaded: boolean, assemblyError: null | 
         } else {
             return (
                 <div>
-                    <h1>Chip-8</h1>
+                    <h1 className={styles.title}>Chip-8</h1>
                     <SourceInputButtons
                         availableSamples={['Tic Tac Toe', 'Places']}
                         onSampleChoice={() => {}}
                         onBinaryLoad={() => {}}
                         onAssemblyLoad={(lines: string[]) => {
                             try {
-                                let preprocessedLines = new Preprocessor().run(lines);
+                                let preprocessedLines = Preprocessor.run(lines);
                                 let binary = Assembler.assembleLines(preprocessedLines);
                                 if (binary !== null) {
                                     this.emulator.load(binary);
-                                    this.setState({loaded: true, assemblyError: null});
+                                    this.setState({loaded: true, assemblyError: null, showManual: false});
                                 }
                             } catch (e) {
-                                this.setState({loaded: false, assemblyError: e});
+                                this.setState({loaded: false, assemblyError: e, showManual: false});
                             }
                         }} />
                     {this.state.assemblyError !== null &&
@@ -97,7 +106,17 @@ class Chip8 extends React.Component<{}, {loaded: boolean, assemblyError: null | 
                         </div>
                     }
                     <div>
-                        Need some help?
+                        {this.state.showManual &&
+                            <a href={process.env.PUBLIC_URL + '/chip8/styleguide.pdf'}>PDF</a>
+                        }
+                        {!this.state.showManual &&
+                            <div>
+                                Need some help?
+                                <button onClick={() => this.setState({loaded: false, assemblyError: null, showManual: true})}>
+                                    Click here
+                                </button>
+                            </div>
+                        }
                     </div>
                 </div>
             );

@@ -1,5 +1,5 @@
 import React, {RefObject} from "react";
-import SourceReader from "../emulators/SourceReader";
+import SourceReader from "../../emulators/SourceReader";
 import styles from "../css/modules/SourceInputButtons.module.css";
 
 type SourceInputButtonsProps = {

@@ -4,6 +4,8 @@ import Dropdown from "./Dropdown";
 import {Link} from "react-router-dom";
 
 const EMULATORS = [
+    {href: '4004', text: '4004'},
+    {href: 'cadc', text: 'CADC'},
     {href: 'chip8', text: 'Chip-8'},
     {href: 'pep8', text: 'Pep-8'},
     {href: 'mp944', text: 'MP944'},

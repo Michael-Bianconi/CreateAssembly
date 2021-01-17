@@ -1,4 +1,4 @@
-import PixelDisplay from "../../components/PixelDisplay";
+import PixelDisplay from "../../client/components/PixelDisplay";
 
 class Emulator {
 
@@ -8,6 +8,7 @@ class Emulator {
     static readonly DISPLAY_WIDTH: number = 64;
     static readonly DISPLAY_HEIGHT: number = 32;
     static readonly UPDATE_SPEED: number = 10;
+    static readonly AVAILABLE_RAM: number = 0xFFF;
     static readonly MOD_4_BIT = 0x10;
     static readonly MOD_8_BIT = 0x100;
     static readonly MOD_12_BIT = 0x1000;
@@ -83,8 +84,9 @@ class Emulator {
     public breakpoints: number[] = [];
     public enableBreakpoints: boolean = true;
     public running: boolean = false;
-    public onBreakpoint: (() => void) = () => {};
     public display: PixelDisplay | undefined;
+    public onBreakpoint: null | (() => void) = () => {};
+    public onEndOfRAM: null | (() => void) = () => {};
 
     constructor(display?: PixelDisplay) {
         this.display = display;
@@ -117,12 +119,20 @@ class Emulator {
 
     run() {
         if (this.running) {
+            if (this.programCounter > Emulator.AVAILABLE_RAM) {
+                this.running = false;
+                if (this.onEndOfRAM !== null) {
+                    this.onEndOfRAM();
+                }
+            }
             if (!this.enableBreakpoints || !this.breakpoints.includes(this.programCounter)) {
                 this.next();
                 setTimeout(() => this.run(), Emulator.UPDATE_SPEED);
             } else {
                 this.running = false;
-                this.onBreakpoint();
+                if (this.onBreakpoint !== null) {
+                    this.onBreakpoint();
+                }
             }
         }
     }
@@ -131,7 +141,7 @@ class Emulator {
         this.timeSinceLastInstruction = new Date().getMilliseconds() - this.timeSinceLastInstruction;
         this.dtRegister = Math.max(0, this.dtRegister - this.timeSinceLastInstruction);
         this.stRegister = Math.max(0, this.stRegister - this.timeSinceLastInstruction);
-        let opcode = this.get_instruction();
+        let opcode = this.get_instruction(this.programCounter);
         for (let i = 0; i < Emulator.INSTRUCTION_TABLE.length; i++) {
             let [pattern, mask, operation] = Emulator.INSTRUCTION_TABLE[i];
             if (!((opcode ^ pattern) & mask)) {
@@ -368,32 +378,10 @@ class Emulator {
         this.programCounter += n * 2;
     }
 
-    get_instruction() {
-        let upper = this.memory[this.programCounter];
-        let lower = this.memory[this.programCounter + 1];
+    get_instruction(location: number): number {
+        let upper = this.memory[location];
+        let lower = this.memory[location + 1];
         return (upper << 8) | lower;
-    }
-
-    set_by_name(register: string, value: number): boolean {
-        register = register.toUpperCase();
-        if (register.startsWith('V')) {
-            let index = parseInt(register[1], 16);
-            this.vRegisters[index] = value % Emulator.MOD_8_BIT;
-        } else if (register === 'I') {
-            this.iRegister = value % Emulator.MOD_16_BIT;
-        } else if (register === 'DT') {
-            this.dtRegister = value % Emulator.MOD_8_BIT;
-        } else if (register === 'ST') {
-            this.stRegister = value % Emulator.MOD_8_BIT;
-        } else if (register === 'SP') {
-            this.stackPointer = value % Emulator.MOD_8_BIT;
-        } else if (register === 'PC') {
-            this.programCounter = value % Emulator.MOD_12_BIT;
-        } else {
-            return false;
-        }
-
-        return true;
     }
 
     static init_memory(): Uint8Array {
