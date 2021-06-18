@@ -1,4 +1,5 @@
 import PixelDisplay from "../../client/components/PixelDisplay";
+import BaseKeypad from "../../input/BaseKeypad";
 
 class Emulator {
 
@@ -79,27 +80,18 @@ class Emulator {
     public memory: Uint8Array = Emulator.init_memory();
     public programCounter: number = 0x200;
     public stack: number[] = Array(Emulator.STACK_SIZE).fill(0);
-    public keysPressed: Set<number> = new Set();
     public timeSinceLastInstruction: number = 0;
     public breakpoints: number[] = [];
     public enableBreakpoints: boolean = true;
     public running: boolean = false;
     public display: PixelDisplay | undefined;
+    public keypad: BaseKeypad | undefined;
     public onBreakpoint: null | (() => void) = () => {};
     public onEndOfRAM: null | (() => void) = () => {};
 
-    constructor(display?: PixelDisplay) {
+    constructor(display?: PixelDisplay, keypad?: BaseKeypad) {
         this.display = display;
-        document.addEventListener('keydown', (event) => {
-            if ('0123456789ABCDEF'.indexOf(event.key.toUpperCase()) !== -1) {
-                this.keysPressed.add(parseInt(event.key, 16));
-            }
-        });
-        document.addEventListener('keyup', (event) => {
-            if ('0123456789ABCDEF'.indexOf(event.key.toUpperCase()) !== -1) {
-                this.keysPressed.delete(parseInt(event.key, 16));
-            }
-        });
+        this.keypad = keypad;
     }
 
     start() {
@@ -161,6 +153,7 @@ class Emulator {
     ret(): void {
         this.programCounter = this.stack[this.stackPointer];
         this.stackPointer = (this.stackPointer - 1) % Emulator.MOD_4_BIT;
+        this.increment_program_counter();
     }
 
     // TODO Unit test
@@ -297,7 +290,7 @@ class Emulator {
 
     // TODO unit tests
     skp_v(vx: number): void {
-        if (this.keysPressed.has(vx)) {
+        if (this.keypad?.isPressed(vx)) {
             this.increment_program_counter(2)
         } else {
             this.increment_program_counter();
@@ -306,7 +299,7 @@ class Emulator {
 
     // TODO unit tests
     sknp_v(vx: number): void {
-        if (!this.keysPressed.has(vx)) {
+        if (!this.keypad?.isPressed(vx)) {
             this.increment_program_counter(2)
         } else {
             this.increment_program_counter();
@@ -320,9 +313,9 @@ class Emulator {
     }
 
     ld_v_k(vx: number): void {
-        let key = this.keysPressed.values().next();
-        if (!key.done) {
-            this.vRegisters[vx] = key.value;
+        let pressed = this.keypad?.getNextPressed();
+        if (pressed !== null && pressed !== undefined) {
+            this.vRegisters[vx] = pressed;
             this.increment_program_counter();
         }
     }

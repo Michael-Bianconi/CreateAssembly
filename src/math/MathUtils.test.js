@@ -1,23 +1,28 @@
 import MathUtils from "./MathUtils";
-import SymbolTable from "../SymbolTable";
+import SymbolTable from "../symbols/SymbolTable";
 
-describe('MathUtils.toInt()', () => {
+describe('MathUtils.toNum()', () => {
 
     test('Decimal', () => {
-        expect(MathUtils.toInt('10')).toBe(10);
+        expect(MathUtils.toNum('10')).toBe(10);
     });
 
     test('Hexadecimal', () => {
-        expect(MathUtils.toInt('0x10')).toBe(0x10);
+        expect(MathUtils.toNum('0x10')).toBe(0x10);
     });
 
     test('Octal', () => {
-        expect(MathUtils.toInt('0o10')).toBe(8);
+        expect(MathUtils.toNum('0o10')).toBe(8);
     });
 
     test('Binary', () => {
-        expect(MathUtils.toInt('0b10')).toBe(2);
-        expect(MathUtils.toInt('0b110110')).toBe(54);
+        expect(MathUtils.toNum('0b10')).toBe(2);
+        expect(MathUtils.toNum('0b110110')).toBe(54);
+    });
+
+    test('Floating', () => {
+        expect(MathUtils.toNum('1.5')).toBe(1.5);
+        expect(MathUtils.toNum('0x54.6')).toBeNull();
     });
 });
 

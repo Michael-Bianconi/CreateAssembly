@@ -1,4 +1,5 @@
 import React from "react";
+import Header from "../components/Header";
 
 class Home extends React.Component {
 
@@ -7,7 +8,10 @@ class Home extends React.Component {
     render() {
         return (
             <div>
-                Hello!
+                <Header />
+                <div>
+                    Hello!
+                </div>
             </div>
         );
     }

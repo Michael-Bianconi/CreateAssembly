@@ -1,4 +1,4 @@
-import SymbolTable from "../SymbolTable";
+import SymbolTable from "../symbols/SymbolTable";
 
 // Sorted in terms of precedence (not including unary plus and minus)
 const OPERATORS = [
@@ -94,7 +94,7 @@ export default class MathUtils {
         for (let i = 0; i < parts.length; i++) {
             if (typeof parts[i] === 'string') {
                 if (!OPERATORS.includes(parts[i] as string)) {
-                    let value = this.toInt(parts[i] as string);
+                    let value = this.toNum(parts[i] as string);
                     if (value !== null) {
                         parts[i] = value;
                     } else {
@@ -280,9 +280,9 @@ export default class MathUtils {
         return -1;
     }
 
-    static toInt(s: string): number | null {
+    static toNum(s: string): number | null {
         if (/^[0-9]+(\.[0-9]*)?$/i.test(s)) {
-            return parseInt(s);
+            return parseFloat(s);
         } else if (/^0x[a-f0-9]+$/i.test(s)) {
             return parseInt(s, 16);
         } else if (/^0b[0-1]+$/i.test(s)) {

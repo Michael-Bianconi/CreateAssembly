@@ -4,9 +4,10 @@ import styles from '../css/modules/chip8/Chip8.module.css';
 import SourceInputButtons from "../components/SourceInputButtons";
 import Emulator from "../../emulators/chip8/Emulator";
 import Assembler from "../../emulators/chip8/Assembler";
-import Preprocessor from "../../emulators/chip8/Preprocessor";
 import Terminal from "../components/Terminal";
 import Interpreter from "../../emulators/chip8/Interpreter";
+import Keypad from "../components/chip8/Keypad";
+import Header from "../components/Header";
 
 type Chip8State = {
     loaded: boolean;
@@ -20,6 +21,7 @@ class Chip8 extends React.Component<{}, Chip8State> {
 
     private readonly displayRef: RefObject<PixelDisplay>;
     private readonly terminalRef: RefObject<Terminal>;
+    private readonly keypadRef: RefObject<Keypad>;
     private readonly interpreter: Interpreter;
     private readonly emulator: Emulator;
 
@@ -31,12 +33,17 @@ class Chip8 extends React.Component<{}, Chip8State> {
         this.interpreter = new Interpreter(this.emulator);
         this.displayRef = React.createRef<PixelDisplay>();
         this.terminalRef = React.createRef<Terminal>();
+        this.keypadRef = React.createRef<Keypad>();
     }
 
     private initEmulator() {
 
         if (!this.emulator.display && this.displayRef.current !== null) {
             this.emulator.display = this.displayRef.current;
+        }
+
+        if (!this.emulator.keypad && this.keypadRef.current !== null) {
+            this.emulator.keypad = this.keypadRef.current.state.keypad;
         }
 
         this.emulator.onBreakpoint = () => {
@@ -60,9 +67,9 @@ class Chip8 extends React.Component<{}, Chip8State> {
     render() {
         if (this.state.loaded) {
             return (
-                <div>
-                    <h1 className={styles.title}>Chip-8</h1>
-                    <div className={styles.pixelDisplayContainer}>
+                <div className={styles.displayTerminalContainer}>
+                    <Header title='Chip-8'/>
+                    <div className={styles.displayContainer}>
                         <PixelDisplay
                             ref={this.displayRef}
                             width={640}
@@ -72,23 +79,26 @@ class Chip8 extends React.Component<{}, Chip8State> {
                             foregroundColor={'white'}
                             backgroundColor={'black'} />
                     </div>
-                    <div className={styles.debuggerContainer}>
+                    <div className={styles.terminalContainer}>
                         <Terminal ref={this.terminalRef} interpreter={this.interpreter}/>
+                    </div>
+                    <div className={styles.clear} />
+                    <div>
+                        <Keypad ref={this.keypadRef}/>
                     </div>
                 </div>
             );
         } else {
             return (
                 <div>
-                    <h1 className={styles.title}>Chip-8</h1>
+                    <Header title='Chip-8' />
                     <SourceInputButtons
                         availableSamples={['Tic Tac Toe', 'Places']}
                         onSampleChoice={() => {}}
                         onBinaryLoad={() => {}}
                         onAssemblyLoad={(lines: string[]) => {
                             try {
-                                let preprocessedLines = Preprocessor.run(lines);
-                                let binary = Assembler.assembleLines(preprocessedLines);
+                                let binary = Assembler.assemble(...lines);
                                 if (binary !== null) {
                                     this.emulator.load(binary);
                                     this.setState({loaded: true, assemblyError: null, showManual: false});
@@ -107,7 +117,7 @@ class Chip8 extends React.Component<{}, Chip8State> {
                     }
                     <div>
                         {this.state.showManual &&
-                            <a href={process.env.PUBLIC_URL + '/chip8/styleguide.pdf'}>PDF</a>
+                            <a href={process.env.PUBLIC_URL + '/chip8/Chip8UserManual.pdf'}>PDF</a>
                         }
                         {!this.state.showManual &&
                             <div>

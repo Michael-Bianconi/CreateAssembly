@@ -1,0 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=Asap+Condensed&display=swap');
+
+.key {
+    border: 1px solid orangered;
+    height: 40px;
+    width: 40px;
+}
+
+.key * {
+    font-family: 'Asap Condensed', sans-serif;
+}
+
+.keyValue {
+    color: black;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.keyPhysical {
+    color: gray;
+}
+
+.pressed {
+    background-color: orange;
+}
+
+.unpressed {
+    background-color: white;
+}

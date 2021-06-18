@@ -6,7 +6,7 @@ test('RET', () => {
     e.stackPointer = 5;
     e.stack[e.stackPointer] = 0x400;
     e.ret();
-    expect(e.programCounter).toBe(0x400);
+    expect(e.programCounter).toBe(0x402);
     expect(e.stackPointer).toBe(4);
 });
 
@@ -176,18 +176,6 @@ test('SHL Vx', () => {
     expect(e.vRegisters[0xF]).toBe(0);
     expect(e.vRegisters[4]).toBe(0xC4);
     expect(e.programCounter).toBe(0x404);
-});
-
-test('LD Vx, K', () => {
-    let e = new Emulator();
-    e.programCounter = 0x400;
-    e.ld_v_k(5);
-    expect(e.programCounter).toBe(0x400);
-    expect(e.vRegisters[5]).toBe(0);
-    e.keysPressed.add(0xA);
-    e.ld_v_k(5);
-    expect(e.programCounter).toBe(0x402);
-    expect(e.vRegisters[5]).toBe(0xA);
 });
 
 test('LD B, Vx', () => {

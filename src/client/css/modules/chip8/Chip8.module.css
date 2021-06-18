@@ -5,27 +5,39 @@
     color: orangered;
     font-family: 'Asap Condensed', sans-serif;
     font-weight: bold;
+    position: absolute;
+    top: 0px;
+    right: 500px;
 }
 
-.pixelDisplayContainer {
+.displayContainer {
     border: 1px solid orangered;
-    display: inline-block;
     float: left;
     height: 320px;
     margin: 4px;
     width: 640px;
 }
 
-.debuggerContainer {
-    display: inline-block;
+.terminalContainer {
+    float: left;
+}
+
+.clear {
+    clear: both;
+}
+
+.displayTerminalContainer {
+    width: 1200px;
+    margin: auto;
 }
 
 .errorContainer {
     border: 1px solid orangered;
     color: orangered;
+    display: block;
     font-family: 'Asap Condensed', sans-serif;
-    height: 50px;
     margin: auto;
+    overflow: auto;
     padding: 20px;
     width: 400px;
 }
@@ -33,4 +45,6 @@
 .errorMessage {
     color: black;
     font-family: 'Roboto Mono', monospace;
+    text-align: left;
+    white-space: pre-wrap;
 }

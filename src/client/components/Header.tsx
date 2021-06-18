@@ -11,14 +11,22 @@ const EMULATORS = [
     {href: 'mp944', text: 'MP944'},
 ];
 
-class Header extends React.Component {
+class Header extends React.Component<{title?: string}> {
+
     render() {
         return (
             <div className={styles.navbar}>
                 <Link to="/" className={styles.navbarTitle}>CreateAssembly.app</Link>
-                <Dropdown text='Emulators' options={EMULATORS} />
+                <div className={styles.dropdownContainer}>
+                    <Dropdown text='Emulators' options={EMULATORS} />
+                </div>
                 <Link to='/source' className={styles.navbarLink}>Source</Link>
                 <Link to='/about' className={styles.navbarLink}>About</Link>
+                { this.props.title !== undefined &&
+                    <div className={styles.pageTitleContainer}>
+                        <span className={styles.pageTitle}>{this.props.title}</span>
+                    </div>
+                }
             </div>
         );
     }

@@ -123,36 +123,20 @@ test('DRW Vx, Vy, Nibble', () => {
     expect(Assembler.assemble("0xDF0A")).toStrictEqual([0xDF0A]);
 });
 
+test('LD [I], Vx', () => {
+    expect(Assembler.assemble('LD [I], V0')).toStrictEqual([0xF055]);
+});
+
 describe('Math', () => {
     test('test 1', () => {
         expect(Assembler.assemble("LD V0, 5 + 1")).toStrictEqual([0x6006]);
     });
 });
 
-describe('ch8 - ch8b comparison tests', () => {
+describe('Labels', () => {
 
-    test('AllFonts', () => {
-        compare('AllFonts');
+    test('Circular', () => {
+        let source = ['define x y', 'define y x', 'add x, y'];
+        expect(() => Assembler.assemble(...source)).toThrow(Error);
     });
-
-    function compare(filename) {
-        let source = SOURCE_DIR + filename + SOURCE_EXT;
-        let expected = SOURCE_DIR + filename + EXPECT_EXT;
-        let sourceLines = getLines(source);
-        let expectedLines = getLines(expected);
-        console.log(sourceLines);
-        let sourceAsm = Assembler.assemble(...sourceLines);
-        let expectedAsm = Assembler.assemble(...expectedLines);
-        expect(sourceAsm).toStrictEqual(expectedAsm);
-    }
-
-    function getLines(inputFile) {
-        try {
-            let data = fs.readFileSync(inputFile, 'utf8');
-            return data.split(/\r?\n/);
-        } catch (err) {
-            console.error(err)
-        }
-        return [];
-    }
 });

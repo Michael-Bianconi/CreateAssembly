@@ -1,21 +1,222 @@
-import SymbolTable from "../../SymbolTable";
+import SymbolTable from "../../symbols/SymbolTable";
 import MathUtils from "../../math/MathUtils";
+import {getEnumKeyByEnumValue} from "../../symbols/EnumUtils";
 
 export enum OperandType {
-    V,
-    I,
-    F,
-    B,
-    K,
-    DT,
-    ST,
-    V0,
-    I_ARR,
-    Number,
-    Nibble,
-    Byte,
-    Address,
-    Label
+    V, I, F, B, K, DT, ST, V0,
+    I_ARR, Number, Nibble, Byte, Address, Label
+}
+
+function operandToString(o: OperandType): string | null {
+    if (o === OperandType.I_ARR) {
+        return '[I]';
+    } else {
+        return getEnumKeyByEnumValue(OperandType, o);
+    }
+}
+
+const INSTRUCTIONS: Record<string, [(OperandType)[], ((...v: any[]) => number)][]> = {
+    'ADD': [
+        [[OperandType.I, OperandType.V], (_i: string, vx: number) => 0xF01E | (vx << 8)],
+        [[OperandType.V, OperandType.Byte], (vx: number, byte: number) => 0x7000 | (vx << 8) | (byte)],
+        [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x8004 | (vx << 8) | (vy << 4)]],
+    'AND': [
+        [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x8002 | (vx << 8) | (vy << 4)]],
+    'CALL': [
+        [[OperandType.Address], (addr: number) => 0x2000 | addr]],
+    'CLS': [
+        [[], () => 0x00E0]],
+    'DRW': [
+        [[OperandType.V, OperandType.V, OperandType.Nibble], (vx: number, vy: number, n: number) => 0xD000 | (vx << 8) | (vy << 4) | n]],
+    'JP': [
+        [[OperandType.Address], (addr: number) => 0x1000 | addr],
+        [[OperandType.V0, OperandType.Address], (_v0: string, addr: number) => 0xB000 | addr]],
+    'LD': [
+        [[OperandType.B, OperandType.V], (_b: any, v: number) => 0xF033 | (v << 8)],
+        [[OperandType.DT, OperandType.V], (_dt: any, v: number) => 0xF015 | (v << 8)],
+        [[OperandType.F, OperandType.V], (_f: any, v: number) => 0xF029 | (v << 8)],
+        [[OperandType.I, OperandType.Address], (_i: any, addr: number) => 0xA000 | addr],
+        [[OperandType.I_ARR, OperandType.V], (_ai: any, v: number) => 0xF055 | (v << 8)],
+        [[OperandType.ST, OperandType.V], (_st: any, v: number) => 0xF018 | (v << 8)],
+        [[OperandType.V, OperandType.Byte], (v: number, byte: number) => 0x6000 | (v << 8) | byte],
+        [[OperandType.V, OperandType.DT], (v: number, _dt: any) => 0xF007 | (v << 8)],
+        [[OperandType.V, OperandType.I_ARR], (v: number, _ai: any) => 0xF065 | (v << 8)],
+        [[OperandType.V, OperandType.K], (v: number, _k: any) => 0xF00A | (v << 8)],
+        [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x8000 | (vx << 8) | (vy << 4)]],
+    'OR': [
+        [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x8001 | (vx << 8) | (vy << 4)]],
+    'RET': [
+        [[], () => 0x00EE]],
+    'RND': [
+        [[OperandType.V, OperandType.Byte], (v: number, byte: number) => 0xC000 | (v << 8) | byte]],
+    'SE': [
+        [[OperandType.V, OperandType.Byte], (v: number, byte: number) => 0x3000 | (v << 8) | byte],
+        [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x5000 | (vx << 8) | (vy << 4)]],
+    'SHL': [
+        [[OperandType.V], (v: number) => 0x800E | (v << 8)],
+        [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x800E | (vx << 8) | (vy << 4)]],
+    'SHR': [
+        [[OperandType.V], (v: number) => 0x8006 | (v << 8)],
+        [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x8006 | (vx << 8) | (vy << 4)]],
+    'SKNP': [
+        [[OperandType.V], (v: number) => 0xE0A1 | (v << 8)]],
+    'SKP': [
+        [[OperandType.V], (v: number) => 0xE09E | (v << 8)]],
+    'SNE': [
+        [[OperandType.V, OperandType.Byte], (v: number, byte: number) => 0x4000 | (v << 8) | byte],
+        [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x9000 | (vx << 8) | (vy << 4)]],
+    'SUB': [
+        [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x8005 | (vx << 8) | (vy << 4)]],
+    'SUBN': [
+        [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x8007 | (vx << 8) | (vy << 4)]],
+    'SYS': [
+        [[OperandType.Address], (addr: number) => addr]],
+    'XOR': [
+        [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x8003 | (vx << 8) | (vy << 4)]],
+};
+
+export default class Assembler {
+
+    private readonly labels: SymbolTable<string> = new SymbolTable<string>(Assembler.KEYWORDS);
+
+    private static readonly KEYWORDS = [
+        'V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6',
+        'V7', 'V8', 'V9', 'VA', 'VB', 'VC', 'VD',
+        'VF', 'ST', 'DT', 'I', '[I]', 'F', 'B', 'K',
+        'CLS', 'RET', 'SYS', 'JP', 'CALL', 'SE', 'SNE',
+        'LD', 'ADD', 'OR', 'AND', 'XOR', 'SUB', 'SHR',
+        'SUBN', 'SHL', 'RND', 'DRW', 'SKP', 'SKNP',
+    ];
+
+    instructionToOpcode(instruction: Instruction): number | null {
+
+        let opcodeInstruction = toBase10(instruction.mnemonic);
+        if (opcodeInstruction !== null && instruction.operands.length === 0) {
+            return opcodeInstruction;
+        }
+
+        let formats = INSTRUCTIONS[instruction.mnemonic];
+        if (formats !== undefined) {
+            for (let format of formats) {
+                let expected = format[0];
+                let actual = instruction.operands;
+                let operation = format[1];
+                if (expected.length === actual.length) {
+                    let match = true;
+                    for (let o = 0; o < actual.length; o++) {
+                        if (actual[o].is(OperandType.Label)) {
+                            let newOperand = null;
+                            try {
+                                newOperand = this.resolveLabel(actual[o]);
+                            } catch (e) {
+                                // Do nothing
+                            }
+                            if (newOperand !== null) {
+                                actual[o] = newOperand;
+                            } else {
+                                return null;
+                            }
+                        }
+                        if (!actual[o].is(expected[o])) {
+                            match = false;
+                            break;
+                        }
+                    }
+                    if (match) {
+                        return operation(...actual.map(a => a.value));
+                    }
+                }
+            }
+        }
+        throw new UnknownInstructionError(instruction);
+    }
+
+    static assemble(...lines: string[]): number[] {
+        let assembler = new Assembler();
+        let instructions: Instruction[] = [];
+        let programCounter = 0x200;
+
+        for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
+
+            // Basic preprocessing
+            let line = lines[lineNumber].trim();
+            line = Assembler.truncateWhitespace(line);
+            line = Assembler.removeComment(line);
+            line = assembler.extractLabels(line, programCounter);
+
+            if (line !== '' && !assembler.processDefine(line)) {
+                // Build instructions
+                let instruction = Instruction.fromString(line, lineNumber);
+                if (instruction !== null) {
+                    instructions.push(instruction);
+                    programCounter += 2;
+                } else {
+                    throw new Error('Error on line ' + lineNumber + ": " + lines[lineNumber]);
+                }
+            }
+        }
+
+        // Resolve any forward declarations
+        let opcodes: number[] = [];
+        for (let i of instructions) {
+            let opcode = assembler.instructionToOpcode(i);
+            if (opcode === null) {
+                throw new UnknownInstructionError(i);
+            } else {
+                opcodes.push(opcode);
+            }
+        }
+
+        return opcodes;
+    }
+
+    private resolveLabel(operand: Operand | null): Operand | null {
+        if (operand === null || operand.type !== OperandType.Label) {
+            return operand;
+        }
+
+        let labelValue = this.labels.retrieve(operand.value as string);
+        let newOperand = labelValue !== null ? Operand.fromString(labelValue) : null;
+        if (newOperand !== null) {
+            return this.resolveLabel(newOperand);
+        } else {
+            throw new Error("Unresolved label: " + operand.value);
+        }
+    }
+
+    private processDefine(line: string): boolean {
+        let hasDefine = false;
+        if (line.toUpperCase().startsWith('DEFINE')) {
+            let parts = line.split(/\s+/);
+            let key = parts[1];
+            let value = parts.slice(2).join(' ');
+            this.labels.store(key, value);
+            hasDefine = true;
+        }
+        return hasDefine;
+    }
+
+    /**
+     * Adds all labels to the symbol table and returns the remainder
+     * of the line.
+     */
+    private extractLabels(line: string, programCounter: number): string {
+        let parts = line.split(':').map(label => label.trim());
+        let labels = parts.slice(0, parts.length - 1);
+        let remainder = parts[parts.length - 1];
+        for (let label of labels) {
+            this.labels.store(label, programCounter.toString());
+        }
+        return remainder;
+    }
+
+    private static truncateWhitespace(line: string): string {
+        return line.replaceAll(/\s+/g, ' ');
+    }
+
+    private static removeComment(line: string): string {
+        return line.split(';')[0].trim();
+    }
 }
 
 class Operand {
@@ -61,7 +262,7 @@ class Operand {
     }
 
     private static parseLiteral(s: string): Operand | null {
-        if (/^[A-Z0-9_]+$/i.test(s)) {
+        if (/^[A-Z0-9_[\]]+$/i.test(s)) {
             switch (s.toUpperCase()) {
                 case 'I':
                     return new Operand(OperandType.I, 'I');
@@ -69,6 +270,8 @@ class Operand {
                     return new Operand(OperandType.B, 'B');
                 case 'K':
                     return new Operand(OperandType.K, 'K');
+                case 'F':
+                    return new Operand(OperandType.F, 'F');
                 case 'DT':
                     return new Operand(OperandType.DT, 'DT');
                 case 'ST':
@@ -110,7 +313,7 @@ class Instruction {
                 if (operand !== null) {
                     operands.push(operand);
                 } else {
-                    return null;
+                    throw new UnknownOperandError(line, o, lineNumber);
                 }
             }
         } else {
@@ -121,206 +324,30 @@ class Instruction {
     }
 }
 
-export default class Assembler {
+export class UnknownOperandError extends Error {
 
-    private readonly labels: SymbolTable<string> = new SymbolTable<string>(Assembler.KEYWORDS);
+    constructor(line: string, operand: string, lineNumber: number) {
+        super('Unknown operand ' + operand + ' on line ' + lineNumber + ': ' + line);
+    }
+}
 
-    private static readonly KEYWORDS = [
-        'V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6',
-        'V7', 'V8', 'V9', 'VA', 'VB', 'VC', 'VD',
-        'VF', 'ST', 'DT', 'I', '[I]', 'F', 'B', 'K',
-        'CLS', 'RET', 'SYS', 'JP', 'CALL', 'SE', 'SNE',
-        'LD', 'ADD', 'OR', 'AND', 'XOR', 'SUB', 'SHR',
-        'SUBN', 'SHL', 'RND', 'DRW', 'SKP', 'SKNP',
-    ];
+export class UnknownInstructionError extends Error {
 
-    private static readonly INSTRUCTIONS: Record<string, [(OperandType)[], ((...v: any[]) => number)][]> = {
-        'ADD': [
-            [[OperandType.I, OperandType.V], (_i: string, vx: number) => 0xF01E | (vx << 8)],
-            [[OperandType.V, OperandType.Byte], (vx: number, byte: number) => 0x7000 | (vx << 8) | (byte)],
-            [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x8004 | (vx << 8) | (vy << 4)]],
-        'AND': [
-            [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x8002 | (vx << 8) | (vy << 4)]],
-        'CALL': [
-            [[OperandType.Address], (addr: number) => 0x2000 | addr]],
-        'CLS': [
-            [[], () => 0x00E0]],
-        'DRW': [
-            [[OperandType.V, OperandType.V, OperandType.Nibble], (vx: number, vy: number, n: number) => 0xD000 | (vx << 8) | (vy << 4) | n]],
-        'JP': [
-            [[OperandType.Address], (addr: number) => 0x1000 | addr],
-            [[OperandType.V0, OperandType.Address], (_v0: string, addr: number) => 0xB000 | addr]],
-        'LD': [
-            [[OperandType.B, OperandType.V], (_b: any, v: number) => 0xF033 | (v << 8)],
-            [[OperandType.DT, OperandType.V], (_dt: any, v: number) => 0xF015 | (v << 8)],
-            [[OperandType.F, OperandType.V], (_f: any, v: number) => 0xF029 | (v << 8)],
-            [[OperandType.I, OperandType.Address], (_i: any, addr: number) => 0xA000 | addr],
-            [[OperandType.I_ARR, OperandType.V], (_ai: any, v: number) => 0xF055 | (v << 8)],
-            [[OperandType.ST, OperandType.V], (_st: any, v: number) => 0xF018 | (v << 8)],
-            [[OperandType.V, OperandType.Byte], (v: number, byte: number) => 0x6000 | (v << 8) | byte],
-            [[OperandType.V, OperandType.DT], (v: number, _dt: any) => 0xF007 | (v << 8)],
-            [[OperandType.V, OperandType.I_ARR], (v: number, _ai: any) => 0xF065 | (v << 8)],
-            [[OperandType.V, OperandType.K], (v: number, _k: any) => 0xF00A | (v << 8)],
-            [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x8000 | (vx << 8) | (vy << 4)]],
-        'OR': [
-            [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x8001 | (vx << 8) | (vy << 4)]],
-        'RET': [
-            [[], () => 0x00EE]],
-        'RND': [
-            [[OperandType.V, OperandType.Byte], (v: number, byte: number) => 0xC000 | (v << 8) | byte]],
-        'SE': [
-            [[OperandType.V, OperandType.Byte], (v: number, byte: number) => 0x3000 | (v << 8) | byte],
-            [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x5000 | (vx << 8) | (vy << 4)]],
-        'SHL': [
-            [[OperandType.V], (v: number) => 0x800E | (v << 8)],
-            [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x800E | (vx << 8) | (vy << 4)]],
-        'SHR': [
-            [[OperandType.V], (v: number) => 0x8006 | (v << 8)],
-            [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x8006 | (vx << 8) | (vy << 4)]],
-        'SKNP': [
-            [[OperandType.V], (v: number) => 0xE0A1 | (v << 8)]],
-        'SKP': [
-            [[OperandType.V], (v: number) => 0xE09E | (v << 8)]],
-        'SNE': [
-            [[OperandType.V, OperandType.Byte], (v: number, byte: number) => 0x4000 | (v << 8) | byte],
-            [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x9000 | (vx << 8) | (vy << 4)]],
-        'SUB': [
-            [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x8005 | (vx << 8) | (vy << 4)]],
-        'SUBN': [
-            [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x8007 | (vx << 8) | (vy << 4)]],
-        'SYS': [
-            [[OperandType.Address], (addr: number) => addr]],
-        'XOR': [
-            [[OperandType.V, OperandType.V], (vx: number, vy: number) => 0x8003 | (vx << 8) | (vy << 4)]],
-    };
-
-    instructionToOpcode(instruction: Instruction): number | null {
-
-        let opcodeInstruction = toBase10(instruction.mnemonic);
-        if (opcodeInstruction !== null && instruction.operands.length === 0) {
-            return opcodeInstruction;
-        }
-
-        let formats = Assembler.INSTRUCTIONS[instruction.mnemonic];
-        if (formats !== undefined) {
-            for (let format of formats) {
-                let expected = format[0];
-                let actual = instruction.operands;
-                let operation = format[1];
-                if (expected.length === actual.length) {
-                    let match = true;
-                    for (let o = 0; o < actual.length; o++) {
-                        if (actual[o].is(OperandType.Label)) {
-                            let newOperand = this.resolveLabel(actual[o]);
-                            if (newOperand !== null) {
-                                actual[o] = newOperand;
-                            } else {
-                                return null;
-                            }
-                        }
-                        if (!actual[o].is(expected[o])) {
-                            match = false;
-                            break;
-                        }
-                    }
-                    if (match) {
-                        return operation(...actual.map(a => a.value));
-                    }
-                }
-            }
-        }
-        throw new Error('Line ' + instruction.lineNumber + ' - Unrecognized instruction: '  + instruction.source);
+    constructor(instruction: Instruction) {
+        super(UnknownInstructionError.getErrorMessage(instruction));
     }
 
-    static assemble(...lines: string[]): number[] {
-        let assembler = new Assembler();
-        let instructions: Instruction[] = [];
-        let programCounter = 0x200;
-
-        for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
-
-            // Basic preprocessing
-            let line = lines[lineNumber].trim();
-            line = Assembler.truncateWhitespace(line);
-            line = Assembler.removeComment(line);
-            line = assembler.extractLabels(line, programCounter);
-
-            if (line !== '' && !assembler.processDefine(line)) {
-                // Build instructions
-                let instruction = Instruction.fromString(line, lineNumber);
-                if (instruction !== null) {
-                    instructions.push(instruction);
-                    programCounter++;
-                } else {
-                    throw new Error('Error on line ' + lineNumber + ": " + lines[lineNumber]);
-                }
-            }
+    private static getErrorMessage(instruction: Instruction): string {
+        let message = 'Unknown instruction on line ' + instruction.lineNumber + ': ' + instruction.source + '\n';
+        message += 'Expected:\n';
+        for (let format of INSTRUCTIONS[instruction.mnemonic]) {
+            let expectedOperands = format[0].map(o => operandToString(o));
+            message += '\t' + instruction.mnemonic + ' ' + expectedOperands.join(', ') + '\n';
         }
-
-        // Resolve any forward declarations
-        let opcodes: number[] = [];
-        for (let i of instructions) {
-            let opcode = assembler.instructionToOpcode(i);
-            if (opcode === null) {
-                throw new Error('Line ' + i.lineNumber + ' - Assembly failed: ' + i.source);
-            } else {
-                opcodes.push(opcode);
-            }
-        }
-
-        return opcodes;
-    }
-
-    private resolveLabel(operand: Operand): Operand | null {
-        if (operand.type === OperandType.Label) {
-            let labelValue = this.labels.retrieve(operand.value as string);
-            if (labelValue !== null) {
-                let newOperand = Operand.fromString(labelValue);
-                if (newOperand !== null) {
-                    return this.resolveLabel(operand);
-                } else {
-                    return null;
-                }
-            } else {
-                throw new Error("Unresolved label: " + operand.value);
-            }
-        } else {
-            return operand;
-        }
-    }
-
-    private processDefine(line: string): boolean {
-        let hasDefine = false;
-        if (line.toUpperCase().startsWith('DEFINE')) {
-            let parts = line.split(/\s+/);
-            let key = parts[1];
-            let value = parts.slice(2).join(' ');
-            this.labels.store(key, value);
-            hasDefine = true;
-        }
-        return hasDefine;
-    }
-
-    /**
-     * Adds all labels to the symbol table and returns the remainder
-     * of the line.
-     */
-    private extractLabels(line: string, programCounter: number): string {
-        let parts = line.split(':').map(label => label.trim());
-        let labels = parts.slice(0, parts.length - 1);
-        let remainder = parts[parts.length - 1];
-        for (let label of labels) {
-            this.labels.store(label, programCounter.toString());
-        }
-        return remainder;
-    }
-
-    private static truncateWhitespace(line: string): string {
-        return line.replaceAll(/\s+/g, ' ');
-    }
-
-    private static removeComment(line: string): string {
-        return line.split(';')[0].trim();
+        message += 'Actual:\n';
+        let actualOperands = instruction.operands.map(o => operandToString(o.type));
+        message += '\t' + instruction.mnemonic + ' ' + actualOperands.join(', ');
+        return message;
     }
 }
 

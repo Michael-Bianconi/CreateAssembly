@@ -117,7 +117,6 @@ class Interpreter extends AbstractInterpreter {
         return output;
     }
 
-    // TODO Multiple registers per line
     private formatRegisters(): string[] {
         let registers = [];
         if (this.emulator) {
@@ -220,11 +219,14 @@ class Interpreter extends AbstractInterpreter {
 
     disassemble(numOps: number): string[] {
         let lines: string[] = [];
-        for (let i = 0; i < numOps * 2; i += 2) {
-            let op = this.emulator?.get_instruction(this.emulator?.programCounter + i);
-            if (op !== null && op !== undefined) {
-                let opStr = Disassembler.disassemble(op);
-                lines.push(opStr !== null ? opStr : 'NULL');
+        if (this.emulator !== undefined) {
+            for (let i = 0; i < numOps * 2; i += 2) {
+                let op = this.emulator.get_instruction(this.emulator?.programCounter + i);
+                if (op !== null && op !== undefined) {
+                    let pc = Interpreter.formatAddress(this.emulator.programCounter + i);
+                    let opStr = Disassembler.disassemble(op);
+                    lines.push(opStr !== null ? `${pc}: ${opStr}` : pc + ': NULL');
+                }
             }
         }
         return lines;
@@ -244,6 +246,10 @@ class Interpreter extends AbstractInterpreter {
             'disassemble [<n>]      Display next n opcodes',
             'help                   Show this message'
         ];
+    }
+
+    private static formatAddress(addr: number) {
+        return '0x' + addr.toString(16).padStart(3, '0')
     }
 }
 

@@ -13,7 +13,6 @@ function App() {
     // emulator you are already on, the component will not re-render.
     return (
         <main className="App">
-            <Header/>
             <Switch>
                 <Route path={Home.URL} component={Home} exact/>
                 <Route path='/about' component={Home}/>
